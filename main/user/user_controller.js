@@ -17,7 +17,9 @@ export const SignUp = async (req, res) => {
         .status(400)
         .json({ message: "Password and confirm password does not match!" });
 
-    const findIfAlreadyAdded = await User.findOne({ email: req.body.email });
+    const findIfAlreadyAdded = await User.findOne({
+      email: req.body.email,
+    }).exec();
     if (findIfAlreadyAdded)
       return res
         .status(409)
@@ -31,7 +33,9 @@ export const SignUp = async (req, res) => {
     res.status(201).json({ message: "User registered successfully!" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Something went wrong!" });
+    res
+      .status(500)
+      .json({ message: "Something went wrong!", error: error.message });
   }
 };
 
@@ -42,9 +46,9 @@ export const SignIn = async (req, res) => {
     if (!req.body?.password)
       return res.status(400).json({ message: "Password is required!" });
 
-    const findUser = await User.findOne({ email: req.body.email }).select(
-      "password"
-    );
+    const findUser = await User.findOne({ email: req.body.email })
+      .select("password")
+      .exec();
     if (!findUser) return res.status(401).json({ message: "User not found!" });
 
     if (!(await bcrypt.compare(req.body.password, findUser.password)))
@@ -65,6 +69,9 @@ export const SignIn = async (req, res) => {
       }
     );
 
+    findUser.refresh_token = refreshToken;
+    await findUser.save();
+
     res.cookie("jwt", refreshToken, {
       httpOnly: true,
       sameSite: "None",
@@ -74,6 +81,73 @@ export const SignIn = async (req, res) => {
     res.status(200).json({ accessToken });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Something went wrong!" });
+    res
+      .status(500)
+      .json({ message: "Something went wrong!", error: error.message });
+  }
+};
+
+export const handleRefreshToken = async (req, res) => {
+  try {
+    const cookies = req.cookies;
+    if (!cookies?.jwt) return res.sendStatus(401);
+    const refreshToken = cookies.jwt;
+
+    const findUser = await User.findOne({ refresh_token: refreshToken }).exec();
+    if (!findUser) return res.sendStatus(403);
+
+    jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_TOKEN_SECRET,
+      async (err, decoded) => {
+        if (err || findUser._id !== decoded?._id) return res.sendStatus(403);
+        const accessToken = jwt.sign(
+          { _id: findUser._id },
+          process.env.JWT_ACCESS_TOKEN_SECRET,
+          {
+            expiresIn: "15m",
+          }
+        );
+        findUser.refresh_token = refreshToken;
+        await findUser.save();
+        res.status(200).json({ accessToken });
+      }
+    );
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Something went wrong!", error: error.message });
+  }
+};
+
+export const signOut = async (req, res) => {
+  try {
+    const cookies = req.cookies;
+    if (!cookies?.jwt) return res.sendStatus(204);
+    const refreshToken = cookies.jwt;
+
+    const findUser = await User.findOne({ refresh_token: refreshToken }).exec();
+    if (!findUser) {
+      res.clearCookie("jwt", {
+        httpOnly: true,
+        sameSite: "None",
+        secure: true,
+      });
+      return res.sendStatus(204);
+    }
+    findUser.refresh_token = "";
+    await findUser.save();
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+    });
+    return res.sendStatus(204);
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ message: "Something went wrong!", error: error.message });
   }
 };
