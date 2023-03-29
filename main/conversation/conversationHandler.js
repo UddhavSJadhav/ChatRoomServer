@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Conversation } from "./conversation_model.js";
+import { User } from "../user/user_model.js";
 
 const conversationHandler = (io, socket) => {
   const userId = mongoose.Types.ObjectId(socket?.userID);
@@ -15,7 +16,8 @@ const conversationHandler = (io, socket) => {
       const newConvo = await Conversation.create({
         participants: [userId, friend],
       });
-      callback(null, { data: newConvo });
+      const FRD = await User.findById(friend);
+      callback(null, { data: { ...newConvo, friend: { name: FRD?.name } } });
     } catch (error) {
       console.log(error);
       callback({ message: "Something went wrong!" });
