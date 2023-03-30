@@ -74,9 +74,13 @@ const io = new Server(httpServer, {
 const onConnection = (socket) => {
   console.log(`User connected ${socket.id}`);
 
+  if (socket?.userID) socket.join(socket?.userID);
+
   userHandler(io, socket);
   conversationHandler(io, socket);
   messageHandler(io, socket);
+
+  socket.on("room:leave", (roomname) => socket.leave(roomname));
 
   socket.on("disconnect", (reason) => {
     console.log(`disconnect ${socket.id} due to ${reason}`);

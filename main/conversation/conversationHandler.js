@@ -17,6 +17,7 @@ const conversationHandler = (io, socket) => {
         participants: [userId, friend],
       });
       const FRD = await User.findById(friend);
+      socket.to(friend).emit("conversation:new_chat", newConvo);
       callback(null, { data: { ...newConvo, friend: { name: FRD?.name } } });
     } catch (error) {
       console.log(error);
@@ -30,7 +31,7 @@ const conversationHandler = (io, socket) => {
         {
           $match: { participants: userId },
         },
-        { $sort: { createdAt: -1 } },
+        // { $sort: { createdAt: -1 } },
         { $unwind: "$participants" },
         {
           $match: { participants: { $ne: userId } },
@@ -59,6 +60,42 @@ const conversationHandler = (io, socket) => {
           },
         },
         { $unwind: "$friend" },
+        {
+          $lookup: {
+            from: "messages",
+            let: { convoID: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ["$conversation", "$$convoID"] },
+                },
+              },
+              { $sort: { createdAt: -1 } },
+              { $limit: 1 },
+              {
+                $project: {
+                  _id: 0,
+                  text: 1,
+                  from: 1,
+                  seen: 1,
+                },
+              },
+            ],
+            as: "messages",
+          },
+        },
+        {
+          $addFields: {
+            message: {
+              $arrayElemAt: ["$messages", -1],
+            },
+          },
+        },
+        {
+          $project: {
+            messages: 0,
+          },
+        },
       ]);
       callback(null, { data });
     } catch (error) {
