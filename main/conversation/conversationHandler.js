@@ -31,7 +31,6 @@ const conversationHandler = (io, socket) => {
         {
           $match: { participants: userId },
         },
-        // { $sort: { createdAt: -1 } },
         { $unwind: "$participants" },
         {
           $match: { participants: { $ne: userId } },
@@ -78,6 +77,7 @@ const conversationHandler = (io, socket) => {
                   text: 1,
                   from: 1,
                   seen: 1,
+                  createdAt: 1,
                 },
               },
             ],
@@ -96,6 +96,7 @@ const conversationHandler = (io, socket) => {
             messages: 0,
           },
         },
+        { $sort: { "message.createdAt": -1 } },
       ]);
       callback(null, { data });
     } catch (error) {
