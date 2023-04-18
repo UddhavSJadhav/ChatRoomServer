@@ -48,6 +48,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser()); //secure:true, will run only on https | comment secure:true to run locally
 
+app.get("/", (_, res) => {
+  res.status(200).json({ message: "Server is running!" });
+});
+
 app.use("/api/v1/auth", UserAuthRoutes);
 
 app.use(UserProtect);
@@ -59,7 +63,8 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "*",
+    origin: ["http://localhost:3000"],
+    credentials: true,
   },
 });
 
