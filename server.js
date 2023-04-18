@@ -56,14 +56,6 @@ app.use("/api/v1/chat", ChatRoutes);
 
 app.use(errorHandler);
 const httpServer = createServer(app);
-try {
-  connectToDB();
-  httpServer.listen(port, () => {
-    console.log(`Server is running on port: ${port}`);
-  });
-} catch (error) {
-  console.log(error);
-}
 
 const io = new Server(httpServer, {
   cors: {
@@ -97,3 +89,14 @@ io.use(async (socket, next) => {
 });
 
 io.on("connection", onConnection);
+
+export const startServer = () => {
+  try {
+    connectToDB();
+    httpServer.listen(port, () => {
+      console.log(`Server is running on port: ${port}`);
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};

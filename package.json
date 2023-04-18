@@ -2,11 +2,11 @@
   "name": "chatroom",
   "version": "1.0.0",
   "description": "simple chat based application",
-  "main": "server.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "author": "UddhavSJadhav",
   "license": "ISC",
