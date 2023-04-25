@@ -17,8 +17,16 @@ const conversationHandler = (io, socket) => {
         participants: [userId, friend],
       });
       const FRD = await User.findById(friend);
-      socket.to(friend).emit("conversation:new_chat", newConvo);
-      callback(null, { data: { ...newConvo, friend: { name: FRD?.name } } });
+      const self = await User.findById(userId);
+      socket
+        .to(friend)
+        .emit("conversation:new_chat", {
+          _id: newConvo?._id,
+          friend: { name: self?.name },
+        });
+      callback(null, {
+        data: { _id: newConvo?._id, friend: { name: FRD?.name } },
+      });
     } catch (error) {
       console.log(error);
       callback({ message: "Something went wrong!" });

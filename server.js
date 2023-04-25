@@ -23,7 +23,10 @@ const app = express();
 
 dotenv.config();
 app.use(logger);
-const whitelist = ["http://localhost:3000"];
+const whitelist = [
+  "http://localhost:3000",
+  "https://chat-room-client-livid.vercel.app",
+];
 // app.use((req, res, next) => {
 //   const origin = req.headers.origin;
 //   if (whitelist.includes(origin)) {
@@ -63,7 +66,10 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000"],
+    origin: [
+      "http://localhost:3000",
+      "https://chat-room-client-livid.vercel.app",
+    ],
     credentials: true,
   },
 });
